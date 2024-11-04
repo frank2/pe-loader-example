@@ -34,7 +34,7 @@ int main(int argc, char *argv[]) {
       return 1;
 
    /* get the nt headers */
-   PIMAGE_NT_HEADERS64 disk_headers = nt_headers(disk_buffer);
+   PIMAGE_NT_HEADERS64 disk_headers = get_nt_headers(disk_buffer);
    uint8_t *valloc_buffer;
    
    /* valloc a buffer of OptionalHeader.ImageSize */
@@ -75,7 +75,7 @@ int main(int argc, char *argv[]) {
 
       while (((PIMAGE_BASE_RELOCATION)base_reloc)->VirtualAddress != 0) {
          PIMAGE_BASE_RELOCATION base_reloc_block = (PIMAGE_BASE_RELOCATION)base_reloc;
-         WORD entry_table = (PIMAGE_RELOCATION_ENTRY)&base_reloc[sizeof(PIMAGE_BASE_RELOCATION)];
+         WORD entry_table = (WORD *)&base_reloc[sizeof(PIMAGE_BASE_RELOCATION)];
          size_t entries = (base_reloc_block->SizeOfBlock-sizeof(PIMAGE_BASE_RELOCATION))/sizeof(WORD);
 
          for (size_t i=0; i<entries; ++i) {
