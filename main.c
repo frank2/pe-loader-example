@@ -65,7 +65,7 @@ int main(int argc, char *argv[]) {
 
    free(disk_buffer);
    
-   PIMAGE_NT_HEADERS64 valloc_headers = nt_headers(valloc_buffer);
+   PIMAGE_NT_HEADERS64 valloc_headers = get_nt_headers(valloc_buffer);
    DWORD reloc_rva = valloc_headers->OptionalHeader.DataDirectory[IMAGE_DIRECTORY_ENTRY_BASERELOC].VirtualAddress;
 
    /* if the image has a relocation directory, use it */
@@ -75,7 +75,7 @@ int main(int argc, char *argv[]) {
 
       while (((PIMAGE_BASE_RELOCATION)base_reloc)->VirtualAddress != 0) {
          PIMAGE_BASE_RELOCATION base_reloc_block = (PIMAGE_BASE_RELOCATION)base_reloc;
-         WORD entry_table = (WORD *)&base_reloc[sizeof(PIMAGE_BASE_RELOCATION)];
+         WORD *entry_table = (WORD *)&base_reloc[sizeof(PIMAGE_BASE_RELOCATION)];
          size_t entries = (base_reloc_block->SizeOfBlock-sizeof(PIMAGE_BASE_RELOCATION))/sizeof(WORD);
 
          for (size_t i=0; i<entries; ++i) {
