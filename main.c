@@ -40,7 +40,7 @@ int main(int argc, char *argv[]) {
    /* valloc a buffer of OptionalHeader.ImageSize */
    /* if IMAGE_DLLCHARACTERISTICS_DYNAMIC_BASE is not set, attempt allocation with the image base */
    if ((disk_headers->OptionalHeader.DllCharacteristics & IMAGE_DLLCHARACTERISTICS_DYNAMIC_BASE) == 0)
-      valloc_buffer = (uint8_t *)VirtualAlloc(disk_headers->OptionalHeader.ImageBase,
+      valloc_buffer = (uint8_t *)VirtualAlloc((LPVOID)disk_headers->OptionalHeader.ImageBase,
                                               disk_headers->OptionalHeader.SizeOfImage,
                                               MEM_COMMIT,
                                               PAGE_EXECUTE_READWRITE);
@@ -75,14 +75,14 @@ int main(int argc, char *argv[]) {
 
       while (((PIMAGE_BASE_RELOCATION)base_reloc)->VirtualAddress != 0) {
          PIMAGE_BASE_RELOCATION base_reloc_block = (PIMAGE_BASE_RELOCATION)base_reloc;
-         PIMAGE_RELOCATION_ENTRY entry_table = (PIMAGE_RELOCATION_ENTRY)&base_reloc[sizeof(PIMAGE_BASE_RELOCATION)];
+         WORD entry_table = (PIMAGE_RELOCATION_ENTRY)&base_reloc[sizeof(PIMAGE_BASE_RELOCATION)];
          size_t entries = (base_reloc_block->SizeOfBlock-sizeof(PIMAGE_BASE_RELOCATION))/sizeof(WORD);
 
          for (size_t i=0; i<entries; ++i) {
-            DWORD reloc_rva = base_reloc_block->VirtualAddress + entry_table[i].Offset;
+            DWORD reloc_rva = base_reloc_block->VirtualAddress + (entry_table[i] & 0xFFF);
             uintptr_t *reloc_ptr = (uintptr_t *)&valloc_buffer[reloc_rva];
                
-            if (entry_table[i].Type == IMAGE_REL_BASED_DIR64)
+            if ((entry_table[i] >> 12) == IMAGE_REL_BASED_DIR64)
                *reloc_ptr += base_delta;
          }
             
@@ -107,7 +107,7 @@ int main(int argc, char *argv[]) {
             if (*original_thunks & 0x8000000000000000)
                *import_addrs = (uintptr_t)GetProcAddress(module, MAKEINTRESOURCE(*original_thunks & 0xFFFF));
             else if (*original_thunks >= import_rva && *original_thunks < import_rva+import_size) {
-               char *forwarder = (char *)&valloc_buffer[thunk_rva];
+               char *forwarder = (char *)&valloc_buffer[*original_thunks];
                char *fwd_copy = (char *)malloc(strlen(forwarder));
                memcpy(fwd_copy, forwarder, strlen(forwarder)+1);
                char *fwd_dll = fwd_copy;
@@ -142,10 +142,10 @@ int main(int argc, char *argv[]) {
 
    if (tls_rva != 0) {
       PIMAGE_TLS_DIRECTORY64 tls_dir = (PIMAGE_TLS_DIRECTORY64)&valloc_buffer[tls_rva];
-      void (**callbacks)(PVOID, DWORD, PVOID) = (void (**)(PVOID, DWORD, PVOID))tls_dir->AddressOfCallbacks;
+      void (**callbacks)(PVOID, DWORD, PVOID) = (void (**)(PVOID, DWORD, PVOID))tls_dir->AddressOfCallBacks;
 
       while (*callbacks != NULL) {
-         *callbacks(valloc_buffer, DLL_PROCESS_ATTACH, NULL);
+         (*callbacks)(valloc_buffer, DLL_PROCESS_ATTACH, NULL);
          ++callbacks;
       }
    }
@@ -160,7 +160,7 @@ int main(int argc, char *argv[]) {
       main(valloc_buffer);
    }
 
-   VirtualFree(valloc_buffer);
+   VirtualFree(valloc_buffer, 0, MEM_RELEASE);
 
    return 0;
 }
