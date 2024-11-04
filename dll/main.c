@@ -11,7 +11,7 @@ BOOL TLS_CALLED = FALSE;
 VOID WINAPI tls_callback(PVOID dll_handle, DWORD reason, PVOID reserved) {
    if (reason == DLL_PROCESS_ATTACH) {
       TLS_CALLED = TRUE;
-      IMAGE_BASE = (uintptr_t)GetModuleHandleA(NULL);
+      MAIN_MODULE = (uintptr_t)GetModuleHandleA(NULL);
    }
 }
 
