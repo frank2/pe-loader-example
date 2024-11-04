@@ -129,7 +129,7 @@ int main(int argc, char *argv[]) {
                *import_addrs = (uintptr_t)GetProcAddress(module, import_by_name->Name);
             }
 
-            ++import_table;
+            ++import_addrs;
             ++original_thunks;
          }
 
