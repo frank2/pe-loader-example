@@ -26,5 +26,5 @@ int main(int argc, char *argv[]) {
    printf("* tls called: %d\n", TLS_CALLED);
    printf("* main module: %016llx\n", MAIN_MODULE);
 
-   return TRUE;
+   return 0;
 }
