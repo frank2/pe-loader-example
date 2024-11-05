@@ -3,7 +3,7 @@
 This repository is a C-based example of reflective PE loading with the Windows API.
 In other words, it's an example of loading executables like DLLs and EXEs without the
 use of APIs like `CreateProcess` and `LoadLibrary`. It is paired with a blogpost,
-whose content is currently TBA.
+which can be found [here](https://amethyst.systems/blog/posts/forbidden-content-crudely-loading-a-pe-file/).
 
 ## Building
 
