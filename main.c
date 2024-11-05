@@ -31,13 +31,18 @@ int main(int argc, char *argv[]) {
    uint8_t *disk_buffer = (uint8_t *)malloc(file_size);
 
    if (!ReadFile(file_handle, disk_buffer, file_size, NULL, NULL))
+   {
+      CloseHandle(file_handle);
       return 1;
+   }
+
+   CloseHandle(file_handle);
 
    /* get the nt headers */
    PIMAGE_NT_HEADERS64 disk_headers = get_nt_headers(disk_buffer);
    uint8_t *valloc_buffer;
    
-   /* valloc a buffer of OptionalHeader.ImageSize */
+   /* valloc a buffer of OptionalHeader.ImageSize
    /* if IMAGE_DLLCHARACTERISTICS_DYNAMIC_BASE is not set, attempt allocation with the image base */
    if ((disk_headers->OptionalHeader.DllCharacteristics & IMAGE_DLLCHARACTERISTICS_DYNAMIC_BASE) == 0)
       valloc_buffer = (uint8_t *)VirtualAlloc((LPVOID)disk_headers->OptionalHeader.ImageBase,
