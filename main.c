@@ -101,14 +101,13 @@ int main(int argc, char *argv[]) {
          HMODULE module = LoadLibraryA((const char *)&valloc_buffer[import_table->Name]);
          uintptr_t *original_thunks = (uintptr_t *)&valloc_buffer[import_table->OriginalFirstThunk];
          uintptr_t *import_addrs = (uintptr_t *)&valloc_buffer[import_table->FirstThunk];
-         void *proc;
 
          while (*original_thunks != 0) {
             if (*original_thunks & 0x8000000000000000)
                *import_addrs = (uintptr_t)GetProcAddress(module, MAKEINTRESOURCE(*original_thunks & 0xFFFF));
             else if (*original_thunks >= import_rva && *original_thunks < import_rva+import_size) {
                char *forwarder = (char *)&valloc_buffer[*original_thunks];
-               char *fwd_copy = (char *)malloc(strlen(forwarder));
+               char *fwd_copy = (char *)malloc(strlen(forwarder)+1);
                memcpy(fwd_copy, forwarder, strlen(forwarder)+1);
                char *fwd_dll = fwd_copy;
                char *fwd_func;
