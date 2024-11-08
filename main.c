@@ -97,7 +97,6 @@ int main(int argc, char *argv[]) {
 
    /* resolve the import table */
    DWORD import_rva = valloc_headers->OptionalHeader.DataDirectory[IMAGE_DIRECTORY_ENTRY_IMPORT].VirtualAddress;
-   DWORD import_size = valloc_headers->OptionalHeader.DataDirectory[IMAGE_DIRECTORY_ENTRY_IMPORT].Size;
 
    if (import_rva != 0) {
       PIMAGE_IMPORT_DESCRIPTOR import_table = (PIMAGE_IMPORT_DESCRIPTOR)&valloc_buffer[import_rva];
@@ -110,24 +109,6 @@ int main(int argc, char *argv[]) {
          while (*original_thunks != 0) {
             if (*original_thunks & 0x8000000000000000)
                *import_addrs = (uintptr_t)GetProcAddress(module, MAKEINTRESOURCE(*original_thunks & 0xFFFF));
-            else if (*original_thunks >= import_rva && *original_thunks < import_rva+import_size) {
-               char *forwarder = (char *)&valloc_buffer[*original_thunks];
-               char *fwd_copy = (char *)malloc(strlen(forwarder)+1);
-               memcpy(fwd_copy, forwarder, strlen(forwarder)+1);
-               char *fwd_dll = fwd_copy;
-               char *fwd_func;
-
-               for (size_t i=0; i<strlen(forwarder); ++i) {
-                  if (fwd_copy[i] == '.') {
-                     fwd_copy[i] = 0;
-                     fwd_func = &fwd_copy[i+1];
-                     break;
-                  }
-               }
-
-               *import_addrs = (uintptr_t)GetProcAddress(LoadLibraryA(fwd_dll), fwd_func);
-               free(fwd_dll);
-            }
             else {
                PIMAGE_IMPORT_BY_NAME import_by_name = (PIMAGE_IMPORT_BY_NAME)&valloc_buffer[*original_thunks];
                *import_addrs = (uintptr_t)GetProcAddress(module, import_by_name->Name);
